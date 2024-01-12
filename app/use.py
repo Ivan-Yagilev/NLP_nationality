@@ -1,15 +1,15 @@
 import transliterate
 import torch
+import json
+from models import Output
 from argparse import Namespace
-from classes import SurnameClassifier, SurnameDataset
+from classes import SurnameClassifier, SurnameVectorizer
 
 
 args = Namespace(
     # Пути к директориям
-    surname_csv="data/surnames/surnames_with_splits.csv",
     vectorizer_file="model_storage/ch4/surname_mlp/vectorizer.json",
-    model_state_file="model.pth",
-    save_dir="model_storage/ch4/surname_mlp",
+    model_state_file="model_storage/ch4/surname_mlp/model.pth",
     # Гиперпараметры модели
     hidden_dim=300
 )
@@ -30,18 +30,24 @@ def predict_nationality(surname, classifier, vectorizer):
 
 
 def predict(surnameKyrillic):
-    new_surname = transliterate.translit(surnameKyrillic, reversed=True)
-    dataset = SurnameDataset.load_dataset_and_load_vectorizer(args.surname_csv,
-                                                              args.vectorizer_file)
-    vectorizer = dataset.get_vectorizer()
+    surname = ""
+    for el in surnameKyrillic:
+        if el != "ь":
+            surname += el
+    new_surname = transliterate.translit(surname, reversed=True)
 
+    with open(args.vectorizer_file) as fp:
+        vectorizer = SurnameVectorizer.from_serializable(json.load(fp))
     classifier = SurnameClassifier(input_dim=len(vectorizer.surname_vocab), 
-                                hidden_dim=args.hidden_dim, 
-                                output_dim=len(vectorizer.nationality_vocab))
+                                    hidden_dim=args.hidden_dim, 
+                                    output_dim=len(vectorizer.nationality_vocab))
 
-    classifier.load_state_dict(torch.load("model_storage/ch4/surname_mlp/model.pth"))
+    classifier.load_state_dict(torch.load(args.model_state_file))
     classifier.eval()
 
     classifier = classifier.to("cpu")
     prediction = predict_nationality(new_surname, classifier, vectorizer)
-    return prediction['nationality'], prediction['probability']
+
+    output = Output(prediction=prediction["nationality"],
+                    score=prediction["probability"])
+    return output
