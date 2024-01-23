@@ -34,7 +34,11 @@ def predict(surnameKyrillic):
     for el in surnameKyrillic:
         if el != "ь":
             surname += el
-    new_surname = transliterate.translit(surname, reversed=True)
+
+    try:
+        new_surname = transliterate.translit(surname, reversed=True)
+    except:
+        new_surname = surname
 
     with open(args.vectorizer_file) as fp:
         vectorizer = SurnameVectorizer.from_serializable(json.load(fp))
