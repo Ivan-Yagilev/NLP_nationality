@@ -9,7 +9,7 @@ RUN pip install --prefix=/install -r requirements.txt
 # Стадия 2: Финальный образ
 FROM python:3.9-slim
 
-COPY --from=builder /install /usr/locala
+COPY --from=builder /install /usr/local
 
 WORKDIR /app
 
