@@ -4,6 +4,6 @@ from models import Input
 
 app = FastAPI()
 
-@app.get("/nationality")
+@app.get("/")
 def nationality(input: Input):
     return predict(input.surname)
